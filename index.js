@@ -95,7 +95,7 @@ app.post("/webhook", async (req, res) => {
         },
         body: JSON.stringify({
           chat_id: process.env.TG_CHAT_ID,
-          photo: `${process.env.BASE_API_URL}/api/${process.env.RENDER_TOKEN}/render?msg=${data[0].value}`,
+          photo: `${process.env.BASE_API_URL}/api/${process.env.RENDER_TOKEN}/render?msg=${encodeURIComponent(data[0].value)}`,
           caption: `Message: ${data[0].value}\nName: ${data[2].value}`,
         }),
       },
