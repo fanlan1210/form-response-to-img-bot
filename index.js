@@ -106,8 +106,8 @@ app.post("/webhook", async (req, res) => {
   res.status(200).end();
 });
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+app.listen(process.env.PORT ?? 3000, () => {
+  console.log(`Server is running on port ${process.env.PORT}`);
   console.log(
     "API: ",
     `${process.env.BASE_API_URL}/api/${process.env.RENDER_TOKEN}/render`,
