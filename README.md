@@ -1,4 +1,4 @@
-# HeyForm Respone to image Bot
+# HeyForm Response to image Bot
 
 ## Overview
 This Node.js application provides an API to generate images from HTML content. It also includes a webhook to send rendered images to a Telegram chat.
