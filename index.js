@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const router = express.Router();
-const nodeHtmlToImage = require("node-html-to-image");
+
 
 const htmlContent = require("./htmlTemplate");
 
@@ -10,16 +10,87 @@ app.get(`/api/${process.env.RENDER_TOKEN}/preview`, (req, res) => {
   res.send(htmlContent);
 });
 
+const fs = require("fs");
+const path = require("path");
+
+const fontRoboto = fs.readFileSync(path.join(__dirname, "assets/fonts/Roboto-Bold.ttf"));
+const fontNotoSansTC = fs.readFileSync(path.join(__dirname, "assets/fonts/NotoSansTC-Bold.ttf"));
+
+const loadEmoji = async (text) => {
+  const emojiRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu;
+  const matches = text.match(emojiRegex) || [];
+  const uniqueEmojis = [...new Set(matches)];
+
+  const graphemeImages = {};
+
+  for (const emoji of uniqueEmojis) {
+    const code = [...emoji].map(c => c.codePointAt(0).toString(16)).join("-");
+    try {
+      const response = await fetch(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${code}.svg`);
+      if (response.ok) {
+        const svg = await response.text();
+        graphemeImages[emoji] = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+      } else {
+        if (code.includes("-fe0f")) {
+          const cleanCode = code.replace(/-fe0f/g, "");
+          const retry = await fetch(`https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${cleanCode}.svg`);
+          if (retry.ok) {
+            const svg = await retry.text();
+            graphemeImages[emoji] = `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to load emoji: ${emoji}`, e);
+    }
+  }
+  return graphemeImages;
+};
+
 app.get(`/api/${process.env.RENDER_TOKEN}/render`, async function (req, res) {
-  const image = await nodeHtmlToImage({
-    html: htmlContent,
-    content: {
-      message: req.query?.msg ?? "Hello World",
-      // name: req.query?.name ?? "Bob",
+  const { default: satori } = await import("satori");
+  const { Resvg } = await import("@resvg/resvg-js");
+  const { html } = await import("satori-html");
+
+  const message = req.query?.msg ?? "Hello World";
+  const template = htmlContent.replace("{{message}}", message);
+
+  const markup = html(template);
+  const graphemeImages = await loadEmoji(message);
+
+  const svg = await satori(markup, {
+    graphemeImages,
+    width: 1200,
+    height: 1200,
+    fonts: [
+      {
+        name: "Roboto",
+        data: fontRoboto,
+        weight: 700,
+        style: "normal",
+      },
+      {
+        name: "Noto Sans TC",
+        data: fontNotoSansTC,
+        weight: 700,
+        style: "normal",
+      },
+    ],
+  });
+
+  const resvg = new Resvg(svg, {
+    background: '#fff',
+    fitTo: {
+      mode: 'width',
+      value: 1200,
     },
   });
+
+  const pngData = resvg.render();
+  const pngBuffer = pngData.asPng();
+
   res.writeHead(200, { "Content-Type": "image/png" });
-  res.end(image, "binary");
+  res.end(pngBuffer);
 });
 
 // webhook related

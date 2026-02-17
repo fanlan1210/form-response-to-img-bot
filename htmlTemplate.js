@@ -50,7 +50,7 @@ module.exports = `
       <body>
         <div class="container">
           <div class="card">
-            <section>{{message}}</<section>
+            <section>{{message}}</section>
           </div>
         </div>
       </body>
