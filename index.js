@@ -24,7 +24,7 @@ app.get(`/api/${process.env.RENDER_TOKEN}/render`, async function (req, res) {
 
 // webhook related
 app.use(express.json());
-app.post("/webhook", async (req, res) => {
+app.post(`/api/${process.env.RENDER_TOKEN}/webhook`, async (req, res) => {
   const data = req.body.answers;
   console.log(data[0].value, data[2].value);
 
