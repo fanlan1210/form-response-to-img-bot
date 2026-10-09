@@ -97,7 +97,6 @@ app.get(`/api/${process.env.RENDER_TOKEN}/render`, async function (req, res) {
 app.use(express.json());
 app.post(`/api/${process.env.RENDER_TOKEN}/webhook`, async (req, res) => {
   const data = req.body.answers;
-  console.log(data[0].value, data[2].value);
 
   try {
     await fetch(
@@ -110,7 +109,7 @@ app.post(`/api/${process.env.RENDER_TOKEN}/webhook`, async (req, res) => {
         body: JSON.stringify({
           chat_id: process.env.TG_CHAT_ID,
           photo: `${process.env.BASE_API_URL}/api/${process.env.RENDER_TOKEN}/render?msg=${encodeURIComponent(data[0].value)}`,
-          caption: `Message: ${data[0].value}\nName: ${data[2].value}`,
+          caption: `Message: ${data[0].value}\nName: ${data[2]?.value ?? '（匿名）'}`,
         }),
       },
     );
